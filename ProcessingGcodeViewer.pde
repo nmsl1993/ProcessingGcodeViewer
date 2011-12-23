@@ -22,9 +22,8 @@ import processing.opengl.*;
 	ControlP5 controlP5;
 	PMatrix3D currCameraMatrix;
 	PGraphicsOpenGL g3; 
+        private boolean is2D = false;
 	private String gCode;
-        //private File gCode = new File(dataPath("") + "RectangularServoHorn2.gcode");
-	//private File gCode = new File("Merged.gcode");
 	private ArrayList<LineSegment> objCommands; 
 	private int curScale = 20;
 
@@ -73,12 +72,12 @@ import processing.opengl.*;
 	private int ySize = 600;
 
 	////////////////////////////////////
-	private boolean dualExtrusionColoring = false ;
+	private boolean dualExtrusionColoring = true ;
 
 
 	public void setup() {
-               gCode = ("RectangularServoHorn2.gcode");
-		//gCode = new File("C:/Users/noah/Dropbox/Rep26Stuff/Example Files/Cupcake/Merged.gcode");
+              // gCode = ("RectangularServoHorn2.gcode");
+		gCode = ("C:/Users/noah/Dropbox/Rep26Stuff/Example Files/Cupcake/Merged.gcode");
                 size(xSize,ySize, OPENGL);
 		frameRate(30);
                 hint(ENABLE_NATIVE_FONTS);
@@ -94,32 +93,56 @@ import processing.opengl.*;
 
 		cam.setMinimumDistance(2);
 		cam.setMaximumDistance(200);
-		cam.rotateX(-.37); //Make it obvious it is 3d to start
-		cam.rotateY(.1);
-		cam.setActive(true);
+		make3D();
 
 
 		controlP5 = new ControlP5(this);
-
-		controlP5.addButton("Choose File...",10f,(xSize - 110),30,80,20);
+               CheckBox cb =  controlP5.addCheckBox("2DBox", xSize - 200, 38);
+                cb.addItem("2D View",0);
+      		controlP5.addButton("Choose File...",10f,(xSize - 110),30,80,20);
 		generateObject();
 	}
-	public void controlEvent(ControlEvent theEvent) {
-		
-		if(theEvent.controller().name() == "Choose File...")
-		{
-			selectFile();
-			//generateObject();
-		}
-		
-
+	public void controlEvent(ControlEvent theEvent) 
+        {
+          if(theEvent.isGroup()) 
+          {
+           int checkChoice = (int)theEvent.group().arrayValue()[0];
+        println("2D view is" + checkChoice);
+            if(checkChoice == 1)
+            {
+            make2D();
+            }
+            if(checkChoice == 0)
+            {
+            make3D();
+            }
+          }
+          else if(theEvent.controller().name() == "Choose File...")
+          {
+          selectFile();
+          generateObject();
+          }
 	}
+        public void make2D()
+        {
+          is2D = true;
+          cam.reset();
+          cam.setActive(false);
+        }
+        public void make3D()
+        {
+          is2D = false;
+          cam.rotateX(-.37); //Make it obvious it is 3d to start
+	  cam.rotateY(.1);
+          cam.setActive(true);
+        }
 	public void generateObject()
 	{
 		GcodeViewParse gcvp = new GcodeViewParse();
 		objCommands = (gcvp.toObj(readFiletoArrayList(gCode)));
 		maxSlider = objCommands.get(objCommands.size() - 1).getLayer(); // Maximum slider value is highest layer
 		defaultValue = maxSlider;
+                controlP5.remove("Layer Slider");
 		controlP5.addSlider("Layer Slider",minSlider,maxSlider,defaultValue,20,100,10,300);
 		//controlP5.addControlWindow("ControlWindow", 50, 50, 20, 20);
 		controlP5.setAutoDraw(false);
@@ -191,9 +214,13 @@ import processing.opengl.*;
 				}
 			}
 
+                        if(!is2D || (ls.getLayer() == maxLayer))
+                        {
 			points = ls.getPoints();
+                        
 			line(points[0],points[1],points[2],points[3], points[4], points[5]);
-		}
+        		}
+                    }
 		popMatrix();
 		// makes the gui stay on top of elements
 		// drawn before.
@@ -204,7 +231,7 @@ import processing.opengl.*;
 		noSmooth();
 		currCameraMatrix = new PMatrix3D(g3.camera);
 		camera();
-                background(0);
+                
 		controlP5.draw();
 		g3.camera = currCameraMatrix;
 	}
@@ -228,7 +255,7 @@ import processing.opengl.*;
         });
       }
 	public void mouseMoved() {
-		if(mouseX < 35 || (mouseY < 50 && mouseX > (xSize - 130)))
+		if(mouseX < 35 || (mouseY < 50 && mouseX > (xSize - 130)) || is2D)
 		{
 			cam.setActive(false);
 		}
