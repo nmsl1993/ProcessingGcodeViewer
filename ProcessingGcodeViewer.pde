@@ -72,24 +72,28 @@ import processing.opengl.*;
 	private int ySize = 600;
 
 	////////////////////////////////////
-	private boolean dualExtrusionColoring = true ;
+        private int camOffset = 70;
+	private boolean dualExtrusionColoring = false ;
 
 
 	public void setup() {
-              // gCode = ("RectangularServoHorn2.gcode");
-		gCode = ("C:/Users/noah/Dropbox/Rep26Stuff/Example Files/Cupcake/Merged.gcode");
+               gCode = ("RectangularServoHorn2.gcode");
+               //gCode = ("C:/Users/noah/Downloads/RoboArm/pig.gcode");
+		//gCode = ("C:/Users/noah/Dropbox/Rep26Stuff/Example Files/Cupcake/Merged.gcode");
                 size(xSize,ySize, OPENGL);
-		frameRate(30);
+		frameRate(25);
                 hint(ENABLE_NATIVE_FONTS);
 		background(0);
 
 		g3 = (PGraphicsOpenGL)g;
+                hint(DISABLE_OPENGL_2X_SMOOTH);
+                noSmooth();
                 GL gl = g3.beginGL();  // always use the GL object returned by beginGL
                gl.glHint(gl.GL_CLIP_VOLUME_CLIPPING_HINT_EXT, gl.GL_FASTEST); //This line does not work with discrete graphcis
                 gl.glEnable(GL.GL_CLIP_PLANE0);
                 g3.endGL();
                 
-		cam = new PeasyCam(this, 0,  0, 0, 70); // parent, x, y, z, initial distance
+		cam = new PeasyCam(this, 0,  0, 0, camOffset); // parent, x, y, z, initial distance
 
 		cam.setMinimumDistance(2);
 		cam.setMaximumDistance(200);
@@ -99,6 +103,7 @@ import processing.opengl.*;
 		controlP5 = new ControlP5(this);
                CheckBox cb =  controlP5.addCheckBox("2DBox", xSize - 200, 38);
                 cb.addItem("2D View",0);
+              
       		controlP5.addButton("Choose File...",10f,(xSize - 110),30,80,20);
 		generateObject();
 	}
@@ -143,7 +148,7 @@ import processing.opengl.*;
 		maxSlider = objCommands.get(objCommands.size() - 1).getLayer(); // Maximum slider value is highest layer
 		defaultValue = maxSlider;
                 controlP5.remove("Layer Slider");
-		controlP5.addSlider("Layer Slider",minSlider,maxSlider,defaultValue,20,100,10,300);
+		controlP5.addSlider("Layer Slider",minSlider,maxSlider,defaultValue,20,100,10,300).setNumberOfTickMarks(maxSlider);
 		//controlP5.addControlWindow("ControlWindow", 50, 50, 20, 20);
 		controlP5.setAutoDraw(false);
 	}
@@ -213,7 +218,7 @@ import processing.opengl.*;
 					}
 				}
 			}
-
+                      
                         if(!is2D || (ls.getLayer() == maxLayer))
                         {
 			points = ls.getPoints();
@@ -236,7 +241,9 @@ import processing.opengl.*;
 		g3.camera = currCameraMatrix;
 	}
         void selectFile() {
-            SwingUtilities.invokeLater(new Runnable() {
+          try
+          {
+            SwingUtilities.invokeAndWait(new Runnable() {
             public void run()
             {
                 JFileChooser fc = new JFileChooser(".");
@@ -249,10 +256,16 @@ import processing.opengl.*;
                   File file = fc.getSelectedFile();
                   gCode = (String)file.getPath();
                   println(gCode);
-                  generateObject();
+                  
                 }
             }
         });
+          }
+          catch(Exception e)
+          {
+            e.printStackTrace();
+          }
+        generateObject();
       }
 	public void mouseMoved() {
 		if(mouseX < 35 || (mouseY < 50 && mouseX > (xSize - 130)) || is2D)

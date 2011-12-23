@@ -34,6 +34,10 @@ public class GcodeViewParse {
 			{
 				currentExtruding = false;
 			}
+                        if(s.matches("\\(\\</layer\\>\\)"))
+                        {
+                         curLayer++; 
+                        }
 			if(s.matches(".*T0.*"))
 			{
 				curToolhead = 0;
@@ -61,11 +65,14 @@ public class GcodeViewParse {
 				}
 				if(!Float.isNaN(parsedZ))
 				{
+                                      /*
 					if (!(Math.abs(parsedZ - lastCoord[2]) <= tolerance))
 					{
 						curLayer++;
 					}
+                                       */
 					lastCoord[2] = parsedZ;
+                                     
 				}
 				if(!Float.isNaN(parsedF))
 				{
