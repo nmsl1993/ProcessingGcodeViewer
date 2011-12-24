@@ -92,15 +92,21 @@ import processing.opengl.*;
 		g3 = (PGraphicsOpenGL)g;
                 hint(DISABLE_OPENGL_2X_SMOOTH);
                 noSmooth();
+                /*
                 GL gl = g3.beginGL();  // always use the GL object returned by beginGL
                gl.glHint(gl.GL_CLIP_VOLUME_CLIPPING_HINT_EXT, gl.GL_FASTEST); //This line does not work with discrete graphcis
-                gl.glEnable(GL.GL_CLIP_PLANE0);
                 g3.endGL();
-                
+                */
+                float fov = PI/3.0;
+                float cameraZ = (height/2.0) / tan(fov/2.0);
+                perspective(fov, float(width)/float(height), 0.1, cameraZ*10.0);
 		cam = new PeasyCam(this, 0,  0, 0, camOffset); // parent, x, y, z, initial distance
-
+         
 		cam.setMinimumDistance(2);
 		cam.setMaximumDistance(200);
+
+
+
 		make3D();
 
 
@@ -172,19 +178,8 @@ import processing.opengl.*;
 		//controlP5.addControlWindow("ControlWindow", 50, 50, 20, 20);
 		
                 curLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
-	}
-	public void generateObject(String gPath)
-	{
-		GcodeViewParse gcvp = new GcodeViewParse();
-		objCommands = (gcvp.toObj(readFiletoArrayList(gPath)));
-		maxSlider = objCommands.get(objCommands.size() - 1).getLayer(); // Maximum slider value is highest layer
-		defaultValue = maxSlider;
-                controlP5.remove("Layer Slider");
-		controlP5.addSlider("Layer Slider",minSlider,maxSlider,defaultValue,20,100,10,300).setNumberOfTickMarks(maxSlider);
-		//controlP5.addControlWindow("ControlWindow", 50, 50, 20, 20);
-		
-                curLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
-	}
+	      isDrawable = true;
+           }
 	public void draw() {
 
 		lights();
@@ -303,10 +298,11 @@ import processing.opengl.*;
                int returned = fc.showOpenDialog(frame);
                 if (returned == JFileChooser.APPROVE_OPTION) 
                 {
+                  isDrawable = false;
                  File file = fc.getSelectedFile();
                   gCode = (String)file.getPath();
                  println(gCode);
-                generateObject(file.getPath());
+                generateObject();
                   
                 }
             }
