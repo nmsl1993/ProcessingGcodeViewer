@@ -106,7 +106,8 @@ import processing.opengl.*;
 		controlP5 = new ControlP5(this);
                CheckBox cb =  controlP5.addCheckBox("2DBox", xSize - 200, 38);
                 cb.addItem("2D View",0);
-              controlP5.setAutoDraw(false);
+                cb.addItem("Enable DualExtrusion Coloring",0);
+                controlP5.setAutoDraw(false);
       		controlP5.addButton("Choose File...",10f,(xSize - 110),30,80,20);
 		if(gCode != null)
                 {
@@ -117,21 +118,32 @@ import processing.opengl.*;
         {
           if(theEvent.isGroup()) 
           {
-           int checkChoice = (int)theEvent.group().arrayValue()[0];
-        println("2D view is" + checkChoice);
-            if(checkChoice == 1)
+           int i = 0;
+           int choice2D = (int)theEvent.group().arrayValue()[0];
+        println("2D view is" + choice2D);
+            if(choice2D == 1)
             {
             make2D();
             }
-            if(checkChoice == 0)
+            if(choice2D == 0)
             {
             make3D();
             }
+          int dualChoice = (int)theEvent.group().arrayValue()[1];
+           
+             if(dualChoice == 1)
+             {
+               dualExtrusionColoring = true; 
+
+             }
+            if(dualChoice == 0)
+             {
+              dualExtrusionColoring = false; 
+             }
           }
           else if(theEvent.controller().name() == "Choose File...")
           {
           selectFile();
-          generateObject();
           }
 	}
         public void make2D()
@@ -147,10 +159,23 @@ import processing.opengl.*;
 	  cam.rotateY(.1);
           cam.setActive(true);
         }
-	public void generateObject()
+        public void generateObject()
 	{
 		GcodeViewParse gcvp = new GcodeViewParse();
 		objCommands = (gcvp.toObj(readFiletoArrayList(gCode)));
+                println("objCommands :" + objCommands.size());
+		maxSlider = objCommands.get(objCommands.size() - 1).getLayer(); // Maximum slider value is highest layer
+		defaultValue = maxSlider;
+                controlP5.remove("Layer Slider");
+		controlP5.addSlider("Layer Slider",minSlider,maxSlider,defaultValue,20,100,10,300).setNumberOfTickMarks(maxSlider);
+		//controlP5.addControlWindow("ControlWindow", 50, 50, 20, 20);
+		
+                curLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
+	}
+	public void generateObject(String gPath)
+	{
+		GcodeViewParse gcvp = new GcodeViewParse();
+		objCommands = (gcvp.toObj(readFiletoArrayList(gPath)));
 		maxSlider = objCommands.get(objCommands.size() - 1).getLayer(); // Maximum slider value is highest layer
 		defaultValue = maxSlider;
                 controlP5.remove("Layer Slider");
@@ -164,7 +189,7 @@ import processing.opengl.*;
 		lights();
 		//ambientLight(128,128,128);
                 background(0);
-                 if(gCode != null)
+                if(objCommands != null)
                 {
 		hint(ENABLE_DEPTH_TEST);
 		pushMatrix();
@@ -262,21 +287,24 @@ import processing.opengl.*;
 		g3.camera = currCameraMatrix;
 	}
         void selectFile() {
+          
           try
           {
-            SwingUtilities.invokeAndWait(new Runnable() {
+            
+            SwingUtilities.invokeLater(new Runnable() {
             public void run()
             {
-                JFileChooser fc = new JFileChooser(".");
+               JFileChooser fc = new JFileChooser(".");
                 
-                fc.setDialogTitle("Choose a file...");
+               fc.setDialogTitle("Choose a file...");
           
-                int returned = fc.showOpenDialog(frame);
+               int returned = fc.showOpenDialog(frame);
                 if (returned == JFileChooser.APPROVE_OPTION) 
                 {
-                  File file = fc.getSelectedFile();
+                 File file = fc.getSelectedFile();
                   gCode = (String)file.getPath();
-                  println(gCode);
+                 println(gCode);
+                generateObject(file.getPath());
                   
                 }
             }
@@ -286,7 +314,7 @@ import processing.opengl.*;
           {
             e.printStackTrace();
           }
-        generateObject();
+        
       }
 	public void mouseMoved() {
 		if(mouseX < 35 || (mouseY < 50 && mouseX > (xSize - 130)) || is2D)
