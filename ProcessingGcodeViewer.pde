@@ -26,7 +26,7 @@ import processing.opengl.*;
 	private String gCode;
 	private ArrayList<LineSegment> objCommands; 
 	private int curScale = 20;
-
+        private int curLayer = 0;
 
 
 	////////////ALPHA VALUES//////////////
@@ -151,6 +151,7 @@ import processing.opengl.*;
 		controlP5.addSlider("Layer Slider",minSlider,maxSlider,defaultValue,20,100,10,300).setNumberOfTickMarks(maxSlider);
 		//controlP5.addControlWindow("ControlWindow", 50, 50, 20, 20);
 		controlP5.setAutoDraw(false);
+                curLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
 	}
 	public void draw() {
 
@@ -163,7 +164,9 @@ import processing.opengl.*;
 
 		float[] points = new float[6];
 		int maxLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
+
 		int curTransparency = 0;
+                beginShape(LINES);
 		for(LineSegment ls : objCommands)
 		{
 			if(ls.getLayer() < maxLayer)
@@ -223,9 +226,17 @@ import processing.opengl.*;
                         {
 			points = ls.getPoints();
                         
-			line(points[0],points[1],points[2],points[3], points[4], points[5]);
+			//vertex(points[0],points[1],points[2],points[3], points[4], points[5]);
+                          vertex(points[0],points[1],points[2]);
+                          vertex(points[3],points[4],points[5]);
         		}
                     }
+                    endShape();
+                    if((curLayer != maxLayer) && is2D)
+                    {
+                      cam.setDistance(cam.getDistance() + (maxLayer - curLayer)*.3,0);
+                    }
+                     curLayer = maxLayer;
 		popMatrix();
 		// makes the gui stay on top of elements
 		// drawn before.
