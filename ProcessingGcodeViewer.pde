@@ -26,6 +26,7 @@ import processing.opengl.*;
 	PMatrix3D currCameraMatrix;
 	PGraphicsOpenGL g3; 
         private boolean is2D = false;
+        private boolean isDrawable = false;
 	private String gCode;
 	private ArrayList<LineSegment> objCommands; 
 	private int curScale = 20;
@@ -189,7 +190,7 @@ import processing.opengl.*;
 		lights();
 		//ambientLight(128,128,128);
                 background(0);
-                if(objCommands != null)
+                if(isDrawable)
                 {
 		hint(ENABLE_DEPTH_TEST);
 		pushMatrix();
@@ -295,8 +296,9 @@ import processing.opengl.*;
             public void run()
             {
                JFileChooser fc = new JFileChooser(".");
-                
+                FileFilter gcodeFilter = new FileNameExtensionFilter("Gcode file", "gcode", "ngc");		
                fc.setDialogTitle("Choose a file...");
+               fc.setFileFilter(gcodeFilter);
           
                int returned = fc.showOpenDialog(frame);
                 if (returned == JFileChooser.APPROVE_OPTION) 
