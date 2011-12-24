@@ -18,6 +18,9 @@ import peasy.PeasyCam;
 import controlP5.*;
 import processing.opengl.*;
 
+
+	private boolean dualExtrusionColoring = false ;
+
 	PeasyCam cam;
 	ControlP5 controlP5;
 	PMatrix3D currCameraMatrix;
@@ -27,6 +30,7 @@ import processing.opengl.*;
 	private ArrayList<LineSegment> objCommands; 
 	private int curScale = 20;
         private int curLayer = 0;
+        
 
 
 	////////////ALPHA VALUES//////////////
@@ -73,11 +77,10 @@ import processing.opengl.*;
 
 	////////////////////////////////////
         private int camOffset = 70;
-	private boolean dualExtrusionColoring = false ;
 
 
 	public void setup() {
-               gCode = ("RectangularServoHorn2.gcode");
+               //gCode = ("RectangularServoHorn2.gcode");
                //gCode = ("C:/Users/noah/Downloads/RoboArm/pig.gcode");
 		//gCode = ("C:/Users/noah/Dropbox/Rep26Stuff/Example Files/Cupcake/Merged.gcode");
                 size(xSize,ySize, OPENGL);
@@ -103,9 +106,12 @@ import processing.opengl.*;
 		controlP5 = new ControlP5(this);
                CheckBox cb =  controlP5.addCheckBox("2DBox", xSize - 200, 38);
                 cb.addItem("2D View",0);
-              
+              controlP5.setAutoDraw(false);
       		controlP5.addButton("Choose File...",10f,(xSize - 110),30,80,20);
-		generateObject();
+		if(gCode != null)
+                {
+                generateObject();
+                }
 	}
 	public void controlEvent(ControlEvent theEvent) 
         {
@@ -150,7 +156,7 @@ import processing.opengl.*;
                 controlP5.remove("Layer Slider");
 		controlP5.addSlider("Layer Slider",minSlider,maxSlider,defaultValue,20,100,10,300).setNumberOfTickMarks(maxSlider);
 		//controlP5.addControlWindow("ControlWindow", 50, 50, 20, 20);
-		controlP5.setAutoDraw(false);
+		
                 curLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
 	}
 	public void draw() {
@@ -158,13 +164,16 @@ import processing.opengl.*;
 		lights();
 		//ambientLight(128,128,128);
                 background(0);
+                 if(gCode != null)
+                {
 		hint(ENABLE_DEPTH_TEST);
 		pushMatrix();
 		noSmooth();
 
 		float[] points = new float[6];
+               
 		int maxLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
-
+                
 		int curTransparency = 0;
                 beginShape(LINES);
 		for(LineSegment ls : objCommands)
@@ -240,6 +249,7 @@ import processing.opengl.*;
 		popMatrix();
 		// makes the gui stay on top of elements
 		// drawn before.
+                }
 		hint(DISABLE_DEPTH_TEST);
 		gui();
 	}
