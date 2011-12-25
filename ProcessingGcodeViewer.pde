@@ -122,14 +122,13 @@ import processing.opengl.*;
 	}
 	public void controlEvent(ControlEvent theEvent) 
         {
-         
           if(theEvent.isGroup()) 
           {
             if(theEvent.group().name() == "2DBox")
             {
-           int i = 0;
-           int choice2D = (int)theEvent.group().arrayValue()[0];
-        println("2D view is" + choice2D);
+             int i = 0;
+             int choice2D = (int)theEvent.group().arrayValue()[0];
+            println("2D view is" + choice2D);
             if(choice2D == 1)
             {
             make2D();
@@ -148,11 +147,8 @@ import processing.opengl.*;
             if(dualChoice == 0)
              {
               dualExtrusionColoring = false; 
-             }
-           int screenChoice = (int)theEvent.group().arrayValue()[2];
-            {
+             }            
             }
-          }
           }
           else if(theEvent.controller().name() == "Choose File...")
           {
@@ -185,7 +181,10 @@ import processing.opengl.*;
           is2D = true;
           cam.reset();
           cam.setActive(false);
+          if(panButts == null)
+          {
           panButts = panButtons();
+          }
         }
         public void make3D()
         {
@@ -193,7 +192,9 @@ import processing.opengl.*;
           cam.rotateX(-.37); //Make it obvious it is 3d to start
 	  cam.rotateY(.1);
           cam.setActive(true);
+          
           controlP5.remove("Pan Buttons");
+          panButts = null;
         }
         public void generateObject()
 	{
@@ -313,6 +314,7 @@ import processing.opengl.*;
 		hint(DISABLE_DEPTH_TEST);
 		gui();
 	}
+
 	private void gui() {
 		noSmooth();
 		currCameraMatrix = new PMatrix3D(g3.camera);
