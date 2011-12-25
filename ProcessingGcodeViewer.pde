@@ -24,7 +24,9 @@ import processing.opengl.*;
 	PeasyCam cam;
 	ControlP5 controlP5;
 	PMatrix3D currCameraMatrix;
-	PGraphicsOpenGL g3; 
+	PGraphicsOpenGL g3;
+        PShape model;
+        ControlGroup panButts;
         private boolean is2D = false;
         private boolean isDrawable = false;
 	private String gCode;
@@ -32,7 +34,6 @@ import processing.opengl.*;
 	private int curScale = 20;
         private int curLayer = 0;
         
-
 
 	////////////ALPHA VALUES//////////////
 
@@ -73,8 +74,8 @@ import processing.opengl.*;
 
 	/////////Canvas Size///////////////
 
-	private int xSize = 800;
-	private int ySize = 600;
+	private int xSize = 5*screen.width/6;
+	private int ySize = 5*screen.height/6;
 
 	////////////////////////////////////
         private int camOffset = 70;
@@ -104,27 +105,28 @@ import processing.opengl.*;
          
 		cam.setMinimumDistance(2);
 		cam.setMaximumDistance(200);
-
-
-
-		make3D();
-
+                cam.setResetOnDoubleClick(false);
 
 		controlP5 = new ControlP5(this);
-               CheckBox cb =  controlP5.addCheckBox("2DBox", xSize - 200, 38);
+               CheckBox cb =  controlP5.addCheckBox("2DBox", width - 200, 38);
                 cb.addItem("2D View",0);
                 cb.addItem("Enable DualExtrusion Coloring",0);
+               // cb.addItem("Full Screen",0);
                 controlP5.setAutoDraw(false);
-      		controlP5.addButton("Choose File...",10f,(xSize - 110),30,80,20);
-		if(gCode != null)
+      		controlP5.addButton("Choose File...",10f,(width - 110),30,80,20);
+                make3D();
+                if(gCode != null)
                 {
                 generateObject();
                 }
 	}
 	public void controlEvent(ControlEvent theEvent) 
         {
+         
           if(theEvent.isGroup()) 
           {
+            if(theEvent.group().name() == "2DBox")
+            {
            int i = 0;
            int choice2D = (int)theEvent.group().arrayValue()[0];
         println("2D view is" + choice2D);
@@ -147,10 +149,35 @@ import processing.opengl.*;
              {
               dualExtrusionColoring = false; 
              }
+           int screenChoice = (int)theEvent.group().arrayValue()[2];
+            {
+            }
+          }
           }
           else if(theEvent.controller().name() == "Choose File...")
           {
           selectFile();
+          }
+          
+          else
+          {
+            float pos[] = cam.getLookAt();
+              if(theEvent.controller().name() == "Left")
+              {
+              cam.lookAt(pos[0] - 1,pos[1],pos[2],0);
+              }
+               else if(theEvent.controller().name() == "Up")
+              {
+              cam.lookAt(pos[0],pos[1] - 1,pos[2],0);
+              }
+               else if(theEvent.controller().name() == "Right")
+              {
+              cam.lookAt(pos[0] + 1,pos[1],pos[2],0);
+              }
+               else if(theEvent.controller().name() == "Down")
+              {
+              cam.lookAt(pos[0],pos[1] + 1,pos[2],0);
+              }
           }
 	}
         public void make2D()
@@ -158,6 +185,7 @@ import processing.opengl.*;
           is2D = true;
           cam.reset();
           cam.setActive(false);
+          panButts = panButtons();
         }
         public void make3D()
         {
@@ -165,13 +193,14 @@ import processing.opengl.*;
           cam.rotateX(-.37); //Make it obvious it is 3d to start
 	  cam.rotateY(.1);
           cam.setActive(true);
+          controlP5.remove("Pan Buttons");
         }
         public void generateObject()
 	{
 		GcodeViewParse gcvp = new GcodeViewParse();
 		objCommands = (gcvp.toObj(readFiletoArrayList(gCode)));
-                println("objCommands :" + objCommands.size());
-		maxSlider = objCommands.get(objCommands.size() - 1).getLayer(); // Maximum slider value is highest layer
+                println("objComBumands :" + objCommands.size());
+		maxSlider = objCommands.get(objCommands.size() - 1).getLayer() -1; // Maximum slider value is highest layer
 		defaultValue = maxSlider;
                 controlP5.remove("Layer Slider");
 		controlP5.addSlider("Layer Slider",minSlider,maxSlider,defaultValue,20,100,10,300).setNumberOfTickMarks(maxSlider);
@@ -179,9 +208,19 @@ import processing.opengl.*;
 		
                 curLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
 	      isDrawable = true;
-           }
+         }
+         public ControlGroup panButtons()
+         {
+            ControlGroup panButts = controlP5.addGroup("Pan Buttons",20,height - 100);
+            panButts.hideBar();
+            //DragHandler panHandle = cam.getPanDragHandler();
+            controlP5.addBang("Up",30,4,20,20).setGroup(panButts);
+            controlP5.addBang("Left",0,34,20,20).setGroup(panButts);
+            controlP5.addBang("Right",60,34,20,20).setGroup(panButts);
+            controlP5.addBang("Down",30,64,20,20).setGroup(panButts);
+            return panButts;
+         }
 	public void draw() {
-
 		lights();
 		//ambientLight(128,128,128);
                 background(0);
@@ -196,7 +235,7 @@ import processing.opengl.*;
 		int maxLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
                 
 		int curTransparency = 0;
-                beginShape(LINES);
+               beginShape(LINES);
 		for(LineSegment ls : objCommands)
 		{
 			if(ls.getLayer() < maxLayer)
@@ -260,8 +299,7 @@ import processing.opengl.*;
                           vertex(points[0],points[1],points[2]);
                           vertex(points[3],points[4],points[5]);
         		}
-                    }
-                    endShape();
+                    }                  endShape();
                     if((curLayer != maxLayer) && is2D)
                     {
                       cam.setDistance(cam.getDistance() + (maxLayer - curLayer)*.3,0);
@@ -271,6 +309,7 @@ import processing.opengl.*;
 		// makes the gui stay on top of elements
 		// drawn before.
                 }
+                
 		hint(DISABLE_DEPTH_TEST);
 		gui();
 	}
@@ -315,7 +354,7 @@ import processing.opengl.*;
         
       }
 	public void mouseMoved() {
-		if(mouseX < 35 || (mouseY < 50 && mouseX > (xSize - 130)) || is2D)
+		if(mouseX < 35 || (mouseY < 50 && mouseX > (width - 130)) || is2D)
 		{
 			cam.setActive(false);
 		}
