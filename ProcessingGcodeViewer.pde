@@ -1,3 +1,19 @@
+/*
+Author: Noah Levy
+
+This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see http://www.gnu.org/licenses.
+*/
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -58,9 +74,9 @@ import processing.opengl.*;
 
 	///////////SPEED VALUES///////////////
 
-	private final int LOW_SPEED = 700;
-	private final int MEDIUM_SPEED = 1400;
-	private final int HIGH_SPEED = 1900;
+	private float LOW_SPEED = 700;
+	private float MEDIUM_SPEED = 1400;
+	private float HIGH_SPEED = 1900;
 
 	//////////////////////////////////////
 
@@ -79,9 +95,22 @@ import processing.opengl.*;
 
 	////////////////////////////////////
         private int camOffset = 70;
+        private int textBoxOffset = 200;
+        
+        /*
+        private static String argument =null;
 
 
+        public static void main(String args[]) {
+        PApplet.main(new String[] {"ProcessingGcodeViewer" });
+        if(args.length >= 1)
+        {
+        argument = args[0];
+        }
+        }
+        */
 	public void setup() {
+              
                //gCode = ("RectangularServoHorn2.gcode");
                //gCode = ("C:/Users/noah/Downloads/RoboArm/pig.gcode");
 		//gCode = ("C:/Users/noah/Dropbox/Rep26Stuff/Example Files/Cupcake/Merged.gcode");
@@ -108,12 +137,23 @@ import processing.opengl.*;
                 cam.setResetOnDoubleClick(false);
 
 		controlP5 = new ControlP5(this);
-               CheckBox cb =  controlP5.addCheckBox("2DBox", width - 200, 38);
+              
+              /*
+                Textfield lowField = controlP5.addTextfield("lowSpeed",textBoxOffset,30,40,20);
+                Textfield mediumField = controlP5.addTextfield("mediumSpeed",textBoxOffset + 60,30,40,20);
+                Textfield highField = controlP5.addTextfield("highSpeed",textBoxOffset + 120,30,40,20);
+                lowField.setText(Float.toString(LOW_SPEED));
+                mediumField.setText(Float.toString(MEDIUM_SPEED));
+                highField.setText(Float.toString(HIGH_SPEED));
+               */
+                
+                CheckBox cb =  controlP5.addCheckBox("2DBox", width - 200, 38);
                 cb.addItem("2D View",0);
                 cb.addItem("Enable DualExtrusion Coloring",0);
                // cb.addItem("Full Screen",0);
                 controlP5.setAutoDraw(false);
       		controlP5.addButton("Choose File...",10f,(width - 110),30,80,20);
+                
                 make3D();
                 if(gCode != null)
                 {
@@ -154,7 +194,18 @@ import processing.opengl.*;
           {
           selectFile();
           }
-          
+          else if(theEvent.controller().name() == "lowSpeed")
+          {
+            LOW_SPEED = Float.parseFloat(theEvent.controller().stringValue());
+          }
+          else if(theEvent.controller().name() == "mediumSpeed")
+          {
+            MEDIUM_SPEED = Float.parseFloat(theEvent.controller().stringValue());
+          }
+          else if(theEvent.controller().name() == "highSpeed")
+          {
+            HIGH_SPEED = Float.parseFloat(theEvent.controller().stringValue());            
+          }
           else
           {
             float pos[] = cam.getLookAt();
@@ -222,7 +273,7 @@ import processing.opengl.*;
             return panButts;
          }
 	public void draw() {
-		lights();
+              lights();
 		//ambientLight(128,128,128);
                 background(0);
                 if(isDrawable)
@@ -372,4 +423,6 @@ import processing.opengl.*;
                 vect = new ArrayList<String>(Arrays.asList(lines));
 		return vect;
 	}
-
+public void mousePressed() {
+ redraw();
+}
