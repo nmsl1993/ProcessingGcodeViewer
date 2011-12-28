@@ -302,10 +302,10 @@ lights();
                 {
                   fill(6,13,137);
                   beginShape();
-                  vertex(-50,-50,0);
-                  vertex(-50,50,0);
-                  vertex(50,50,0);
-                  vertex(50,-50,0);
+                  vertex(-60,-60,0);
+                  vertex(-60,60,0);
+                  vertex(60,60,0);
+                  vertex(60,-60,0);
                   endShape();
                   noFill();
                 }

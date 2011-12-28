@@ -19,13 +19,18 @@ public class GcodeViewParse {
 		Point3f curPoint = null;
 		int curLayer = 0;
 		int curToolhead = 0;
-		float parsedX, parsedY, parsedZ, parsedF;
+		float parsedX, parsedY, parsedZ, parsedF, parsedE;
 		float tolerance = .0002f;
 		ArrayList<LineSegment> lines = new ArrayList<LineSegment>();
 		float[] lastCoord = { 0.0f, 0.0f, 0.0f};
 		boolean currentExtruding = false;
+                boolean is5d = false;
 		for(String s : gcode)
 		{
+                        if(is5d)
+                        {
+                         currentExtruding = false; //If the print is 5d than each layer should default as not extruding 
+                        }
 			if(s.matches(".*M101.*"))
 			{
 				currentExtruding = true;
@@ -53,7 +58,7 @@ public class GcodeViewParse {
 				parsedY = parseCoord(sarr, 'Y');
 				parsedZ = parseCoord(sarr, 'Z');
 				parsedF = parseCoord(sarr, 'F');
-
+                                parsedE = parseCoord(sarr, 'E');
 				//System.out.println(Arrays.toString(sarr));
 				if(!Float.isNaN(parsedX))
 				{
@@ -78,6 +83,12 @@ public class GcodeViewParse {
 				{
 					speed = parsedF;
 				}
+                                if(!Float.isNaN(parsedE))
+                                {
+                                  is5d = true;
+                                  currentExtruding = true;
+                                  
+                                }
 				if(!(Float.isNaN(lastCoord [0]) || Float.isNaN(lastCoord [1]) || Float.isNaN(lastCoord [2])))
 				{
 					if(debugVals)
