@@ -7,11 +7,49 @@ import javax.vecmath.Point3f;
 
 public class GcodeViewParse {
 	private static boolean debugVals = false;
-
+        private static float extremes[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f}; // -x, -y, -z, x, y, z
 	public GcodeViewParse()
 	{
 
 	}
+        
+        public float[] getExtremes()
+        {
+          return extremes;
+        }
+        private void testExtremes(Point3f p3f)
+        {
+          testExtremes(p3f.x, p3f.y, p3f.z);
+          
+        }
+        private void testExtremes(float x, float y, float z)
+        {
+          if(x < extremes[0])
+          {
+            extremes[0] = x;
+          }
+          if(x > extremes[3])
+          {
+            extremes[3] = x;
+          }
+          if(y < extremes[1])
+          {
+            extremes[1] = y;
+          }
+          if(y > extremes[4])
+          {
+            extremes[4] = y;
+          }
+          if(z < extremes[2])
+          {
+            extremes[2] = z;
+          }
+          if(z > extremes[5])
+          {
+            extremes[5] = z;
+          }
+          
+        }
 	public ArrayList<LineSegment> toObj(ArrayList<String> gcode)
 	{
 		float speed = 2; //DEFAULTS to 2
@@ -19,18 +57,13 @@ public class GcodeViewParse {
 		Point3f curPoint = null;
 		int curLayer = 0;
 		int curToolhead = 0;
-		float parsedX, parsedY, parsedZ, parsedF, parsedE;
+		float parsedX, parsedY, parsedZ, parsedF;
 		float tolerance = .0002f;
 		ArrayList<LineSegment> lines = new ArrayList<LineSegment>();
 		float[] lastCoord = { 0.0f, 0.0f, 0.0f};
 		boolean currentExtruding = false;
-                boolean is5d = false;
 		for(String s : gcode)
 		{
-                        if(is5d)
-                        {
-                         currentExtruding = false; //If the print is 5d than each layer should default as not extruding 
-                        }
 			if(s.matches(".*M101.*"))
 			{
 				currentExtruding = true;
@@ -58,7 +91,7 @@ public class GcodeViewParse {
 				parsedY = parseCoord(sarr, 'Y');
 				parsedZ = parseCoord(sarr, 'Z');
 				parsedF = parseCoord(sarr, 'F');
-                                parsedE = parseCoord(sarr, 'E');
+
 				//System.out.println(Arrays.toString(sarr));
 				if(!Float.isNaN(parsedX))
 				{
@@ -83,21 +116,19 @@ public class GcodeViewParse {
 				{
 					speed = parsedF;
 				}
-                                if(!Float.isNaN(parsedE))
-                                {
-                                  is5d = true;
-                                  currentExtruding = true;
-                                  
-                                }
 				if(!(Float.isNaN(lastCoord [0]) || Float.isNaN(lastCoord [1]) || Float.isNaN(lastCoord [2])))
 				{
+                                        
 					if(debugVals)
 					{
 						System.out.println(lastCoord[0] + "," + lastCoord [1] + "," + lastCoord[2] + ", speed =" + speed + 
 								", layer=" + curLayer);
 					}
 					curPoint = new Point3f(lastCoord[0], lastCoord[1], lastCoord[2]);
-
+                                        if(currentExtruding && curLayer > 5)
+                                        {
+                                        testExtremes(curPoint);
+                                        }
 					if(lastPoint != null)
 					{
 

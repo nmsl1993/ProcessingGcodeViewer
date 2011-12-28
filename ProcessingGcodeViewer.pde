@@ -83,7 +83,7 @@ import processing.opengl.*;
 
 	//////////SLIDER VALUES/////////////
 
-	private int minSlider = 0;
+	private int minSlider = 1;
 	private int maxSlider;
 	private int defaultValue;
 
@@ -130,14 +130,7 @@ import processing.opengl.*;
                gl.glHint(gl.GL_CLIP_VOLUME_CLIPPING_HINT_EXT, gl.GL_FASTEST); //This line does not work with discrete graphcis
                 g3.endGL();
                 */
-                float fov = PI/3.0;
-                float cameraZ = (height/2.0) / tan(fov/2.0);
-                perspective(fov, float(width)/float(height), 0.1, cameraZ*10.0); //Calling perspective allows me to set 0.1 as the frustum's zNear which prevents a bunch of clipping issues.
-                cam = new PeasyCam(this, 0,  0, 0, camOffset); // parent, x, y, z, initial distance
-         
-		cam.setMinimumDistance(2);
-		cam.setMaximumDistance(200);
-                cam.setResetOnDoubleClick(false);
+                setupCamera();
 
 		controlP5 = new ControlP5(this);
               
@@ -264,10 +257,17 @@ import processing.opengl.*;
         }
         public void generateObject()
 	{
+  		scale(1, -1, 1); //orient cooridnate plane right-handed props to whosawwhatsis for discovering this
+
 		GcodeViewParse gcvp = new GcodeViewParse();
 		objCommands = (gcvp.toObj(readFiletoArrayList(gCode)));
+                float bounds[] = gcvp.getExtremes();
+                System.out.println("Object bounds = " + Arrays.toString(bounds));
+                float cent[] = findCenter(bounds);
+                System.out.println("Center = " + Arrays.toString(cent));
+                //cam.lookAt(-1*bounds[0], -1*bounds[1], 0, camOffset);
                 println("objComBumands :" + objCommands.size());
-		maxSlider = objCommands.get(objCommands.size() - 1).getLayer() -1; // Maximum slider value is highest layer
+		maxSlider = objCommands.get(objCommands.size() - 1).getLayer() - 1; // Maximum slider value is highest layer
 		defaultValue = maxSlider;
                 controlP5.remove("Layer Slider");
 		controlP5.addSlider("Layer Slider",minSlider,maxSlider,defaultValue,20,100,10,300).setNumberOfTickMarks(maxSlider);
@@ -275,6 +275,27 @@ import processing.opengl.*;
 		
                 curLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
 	      isDrawable = true;
+         }
+         private float[] findCenter(float[] bounds)
+         {
+          float cent[] = {(bounds[0] + bounds[3]),(bounds[1] + bounds[4]),(bounds[2] + bounds[5])};
+          return cent;
+         }
+         private void setupCamera()
+         {
+          setupCamera(0,0); 
+         }
+         private void setupCamera(float centerX, float centerY)
+         {
+           float fov = PI/3.0;
+                float cameraZ = (height/2.0) / tan(fov/2.0);
+                perspective(fov, float(width)/float(height), 0.1, cameraZ*10.0); //Calling perspective allows me to set 0.1 as the frustum's zNear which prevents a bunch of clipping issues.
+                cam = new PeasyCam(this, centerX,  centerY, 0, camOffset); // parent, x, y, z, initial distance
+         
+		cam.setMinimumDistance(2);
+		cam.setMaximumDistance(200);
+                cam.setResetOnDoubleClick(false);
+           
          }
          public ControlGroup panButtons()
          {
@@ -288,7 +309,7 @@ import processing.opengl.*;
             return panButts;
          }
 	public void draw() {
-lights();
+                lights();
               //directionalLight(255, 255, 255, -1, 0, 0);
 //spotLight(51, 102, 126, 80, 20, 40, -1, 0, 0, PI/2, 2);
 
@@ -302,10 +323,10 @@ lights();
                 {
                   fill(6,13,137);
                   beginShape();
-                  vertex(-60,-60,0);
-                  vertex(-60,60,0);
-                  vertex(60,60,0);
-                  vertex(60,-60,0);
+                  vertex(-50,-50,0);
+                  vertex(-50,50,0);
+                  vertex(50,50,0);
+                  vertex(50,-50,0);
                   endShape();
                   noFill();
                 }
@@ -420,19 +441,19 @@ lights();
 		popMatrix();
 		// makes the gui stay on top of elements
 		// drawn before.
-                
-                
 		hint(DISABLE_DEPTH_TEST);
+                
 		gui();
 	}
 
 	private void gui() {
 		noSmooth();
-		currCameraMatrix = new PMatrix3D(g3.camera);
-		camera();
-                
+		//currCameraMatrix = new PMatrix3D(g3.camera);
+		//camera();
+                cam.beginHUD();
 		controlP5.draw();
-		g3.camera = currCameraMatrix;
+                cam.endHUD();
+		//g3.camera = currCameraMatrix;
 	}
         void selectFile() {
           
