@@ -37,17 +37,18 @@ import processing.opengl.*;
 
 	private boolean dualExtrusionColoring = false ;
 
-	PeasyCam cam;
-	ControlP5 controlP5;
-	PMatrix3D currCameraMatrix;
-	PGraphicsOpenGL g3;
-        PShape model;
-        ControlGroup panButts;
+	PeasyCam cam; //The camera object, PeasyCam extends the default processing camera and enables user interaction
+	ControlP5 controlP5; //ControlP5 object, ControlP5 is a library used for drawing GUI items
+	PMatrix3D currCameraMatrix; //By having 2 camera matrix I'm able to switch a 3D pannable area and a fixed gui in relation to the user
+	PGraphicsOpenGL g3; //The graphics object, necessary for openGL manipulations
+        ControlGroup panButts; //The group of controlP5 buttons related to panning
         private boolean is2D = false;
-        private boolean isDrawable = false;
-	private String gCode;
-	private ArrayList<LineSegment> objCommands; 
-	private int curScale = 20;
+        private boolean isDrawable = false; //True if a file is loaded; false if not
+        private boolean isPlatformed = false;
+        private boolean isSpeedColored = true;
+	private String gCode; //The path of the gcode File
+	private ArrayList<LineSegment> objCommands; //An ArrayList of linesegments composing the model
+	private int curScale = 20; 
         private int curLayer = 0;
         
 
@@ -109,18 +110,20 @@ import processing.opengl.*;
         }
         }
         */
+        
+        
 	public void setup() {
               
                //gCode = ("RectangularServoHorn2.gcode");
                //gCode = ("C:/Users/noah/Downloads/RoboArm/pig.gcode");
 		//gCode = ("C:/Users/noah/Dropbox/Rep26Stuff/Example Files/Cupcake/Merged.gcode");
-                size(xSize,ySize, OPENGL);
+                size(xSize,ySize, OPENGL); //OpenGL is the renderer; untested with p3d
 		frameRate(25);
-                hint(ENABLE_NATIVE_FONTS);
-		background(0);
+                hint(ENABLE_NATIVE_FONTS); //I've found this hint prevents some weird ControlP5 font not in box issues.
+		background(0); //Make background black
 
 		g3 = (PGraphicsOpenGL)g;
-                hint(DISABLE_OPENGL_2X_SMOOTH);
+                hint(DISABLE_OPENGL_2X_SMOOTH); //AntiAliasing really hurts performance and I've found it to be distracting when on
                 noSmooth();
                 /*
                 GL gl = g3.beginGL();  // always use the GL object returned by beginGL
@@ -129,8 +132,8 @@ import processing.opengl.*;
                 */
                 float fov = PI/3.0;
                 float cameraZ = (height/2.0) / tan(fov/2.0);
-                perspective(fov, float(width)/float(height), 0.1, cameraZ*10.0);
-		cam = new PeasyCam(this, 0,  0, 0, camOffset); // parent, x, y, z, initial distance
+                perspective(fov, float(width)/float(height), 0.1, cameraZ*10.0); //Calling perspective allows me to set 0.1 as the frustum's zNear which prevents a bunch of clipping issues.
+                cam = new PeasyCam(this, 0,  0, 0, camOffset); // parent, x, y, z, initial distance
          
 		cam.setMinimumDistance(2);
 		cam.setMaximumDistance(200);
@@ -147,14 +150,16 @@ import processing.opengl.*;
                 highField.setText(Float.toString(HIGH_SPEED));
                */
                 
-                CheckBox cb =  controlP5.addCheckBox("2DBox", width - 200, 38);
+                CheckBox cb =  controlP5.addCheckBox("2DBox", width - 200, 38); //The object that contains the gui checkoxes
                 cb.addItem("2D View",0);
                 cb.addItem("Enable DualExtrusion Coloring",0);
+                cb.addItem("Show Platform",0);
+                //cb.addItem("Consecutive Coloring",0);
                // cb.addItem("Full Screen",0);
-                controlP5.setAutoDraw(false);
-      		controlP5.addButton("Choose File...",10f,(width - 110),30,80,20);
+                controlP5.setAutoDraw(false); //THIS IS VERY IMPORTANT, this allows me to designate specifically when the GUI gets drawn, without this and my gui() method the buttons would exist in the 3D plane with everything else
+      		controlP5.addButton("Choose File...",10f,(width - 110),30,80,20); //Opens JFileChooser
                 
-                make3D();
+                make3D(); //By default the model should be displayed in 3D
                 if(gCode != null)
                 {
                 generateObject();
@@ -177,17 +182,27 @@ import processing.opengl.*;
             {
             make3D();
             }
-          int dualChoice = (int)theEvent.group().arrayValue()[1];
+           int dualChoice = (int)theEvent.group().arrayValue()[1];
            
-             if(dualChoice == 1)
-             {
-               dualExtrusionColoring = true; 
-
-             }
-            if(dualChoice == 0)
-             {
-              dualExtrusionColoring = false; 
-             }            
+           if(dualChoice == 1)
+           {
+             dualExtrusionColoring = true; 
+  
+           }
+          if(dualChoice == 0)
+           {
+            dualExtrusionColoring = false; 
+           }
+          int platformChoice = (int)theEvent.group().arrayValue()[2];
+            if(platformChoice == 1)
+           {
+             isPlatformed = true; 
+  
+           }
+          if(platformChoice == 0)
+           {
+            isPlatformed = false; 
+           }
             }
           }
           else if(theEvent.controller().name() == "Choose File...")
@@ -273,20 +288,37 @@ import processing.opengl.*;
             return panButts;
          }
 	public void draw() {
-              lights();
-		//ambientLight(128,128,128);
+lights();
+              //directionalLight(255, 255, 255, -1, 0, 0);
+//spotLight(51, 102, 126, 80, 20, 40, -1, 0, 0, PI/2, 2);
+
+		//ambientLight(255,255,255);
                 background(0);
-                if(isDrawable)
-                {
+                
 		hint(ENABLE_DEPTH_TEST);
 		pushMatrix();
 		noSmooth();
+               if(isPlatformed)
+                {
+                  fill(6,13,137);
+                  beginShape();
+                  vertex(-50,-50,0);
+                  vertex(-50,50,0);
+                  vertex(50,50,0);
+                  vertex(50,-50,0);
+                  endShape();
+                  noFill();
+                }
+                if(isDrawable)
+                {
+		scale(1, -1, 1); //orient cooridnate plane right-handed props to whosawwhatsis for discovering this
 
 		float[] points = new float[6];
                
 		int maxLayer = (int)Math.round(controlP5.controller("Layer Slider").value());
                 
 		int curTransparency = 0;
+                int curColor = 0;
                beginShape(LINES);
 		for(LineSegment ls : objCommands)
 		{
@@ -310,6 +342,8 @@ import processing.opengl.*;
 			{
 				if(ls.getExtruding())
 				{
+                                    if(isSpeedColored)
+                                    {
 					if(ls.getSpeed() > LOW_SPEED && ls.getSpeed() < MEDIUM_SPEED)
 					{
 						stroke(PURPLE, curTransparency);
@@ -326,6 +360,31 @@ import processing.opengl.*;
 					{
 						stroke(GREEN, curTransparency);
 					}
+                                    }
+                                    if(!isSpeedColored)
+                                    {
+                                        if(curColor == 0)
+                                        {
+                                         stroke(GREEN, SUPERSOLID);
+                                        } 
+                                        if(curColor == 1)
+                                        {
+                                        stroke(RED, SUPERSOLID); 
+                                        } 
+                                        if(curColor == 2)
+                                        {
+                                         stroke(BLUE, SUPERSOLID);
+                                        } 
+                                        if(curColor == 3)
+                                        {
+                                         stroke(YELLOW, SUPERSOLID);
+                                        }
+                                         curColor++; 
+                                        if(curColor == 4)
+                                        {
+                                         curColor = 0; 
+                                        }
+                                    }
 				}
 			}
 			if(dualExtrusionColoring)
@@ -357,10 +416,11 @@ import processing.opengl.*;
                       cam.setDistance(cam.getDistance() + (maxLayer - curLayer)*.3,0);
                     }
                      curLayer = maxLayer;
+                }
 		popMatrix();
 		// makes the gui stay on top of elements
 		// drawn before.
-                }
+                
                 
 		hint(DISABLE_DEPTH_TEST);
 		gui();
